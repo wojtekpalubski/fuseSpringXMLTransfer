@@ -4,6 +4,7 @@
     <bean class="pl.wpe.bean.Plik" id="plikBean"/>
     <bean class="pl.wpe.processor.XMLPlikProcessor" id="plikProcessor"/>
     <bean class="pl.wpe.processor.Plik2KomunikatMSEPOProcesor" id="plikeKomunikatMSEPOProcessor"/>
+    <bean class="pl.wpe.processor.EPOProcesor" id="EPOProcesor"/>
     <bean class="org.apache.activemq.camel.component.ActiveMQComponent" id="activemq">
         <property name="brokerURL" value="tcp://localhost:61617"/>
     </bean>
@@ -41,13 +42,18 @@
             <to id="_logTrescKomunikatMSEPO" uri="log:kolunikatMSEPO?showAll=true"/>
             <to id="_wyjscieDir" uri="file:D:\dane\projekty\camel\cmlhelo\xml\wy?fileExist=Override"/>
         </route>
-        <route id="_jdbcRoute">
-            <from id="_quartz" uri="quartz2:groupName/triggerName?cron=0+0/1+12-18+?+*+MON-FRI"/>
-            <to id="_logPrzedZapytaniemDB" uri="log:przedZapytaniemDB?showAll=true"/>
-            <to id="_zapytanieSQL" pattern="OutOnly" uri="sql:select count(*) from camel;?dataSource=jdbc/crudDS&amp;exchangePattern=OutOnly">
-                <description>zapytanieSQL</description>
-            </to>
-            <to id="_logPoZapytaniuDB" uri="log:poZapytaniuDB?showAll=true"/>
+        <!-- <route id="_jdbcRoute"> <from id="_quartz" uri="quartz2:groupName/triggerName?cron=0+0/1+12-18+?+*+MON-FRI"/> 
+			<to id="_logPrzedZapytaniemDB" uri="log:przedZapytaniemDB?showAll=true"/> 
+			<to id="_zapytanieSQL" pattern="OutOnly" uri="sql:select count(*) from camel;?dataSource=jdbc/crudDS&amp;exchangePattern=OutOnly"> 
+			<description>zapytanieSQL</description> </to> <to id="_logPoZapytaniuDB" 
+			uri="log:poZapytaniuDB?showAll=true"/> </route> -->
+        <route id="_przesylkaEPORoute">
+            <from id="_wejscieEPO" uri="file:D:\dane\projekty\camel\cmlhelo\xml\epowe?delay=10000"/>
+            <!-- <process id="_przetworzPrzesylkaEPO" ref="plikProcessor"/> -->
+            <unmarshal id="_unmarshalPrzesylkaEPO" ref="plikJaxb"/>
+            <to id="_logEPO" uri="log:poWczytaniuPrzesylkaEPO?showAll=true"/>
+            <process id="_liczPrzesylkiEPO" ref="EPOProcesor"/>
+            <to id="_wyjscieEPO" uri="file:D:\dane\projekty\camel\cmlhelo\xml\epowy?fileExist=Override"/>
         </route>
     </camelContext>
 </beans>
